@@ -18,6 +18,8 @@ current_color = (255, 255, 255)  # Blanco por defecto
 # Variable global para controlar la animación
 is_playing = False
 
+# FUNCIONES #
+
 # Función para seleccionar el color
 def choose_color():
     global current_color
@@ -28,6 +30,7 @@ def choose_color():
 
 # Función para aplicar el color actual a una casilla (LED)
 def apply_color(x, y):
+    global led_colors
     led_colors[x][y] = current_color  # Actualizar el color en la matriz de colores
     led_matrix[x][y].config(bg=rgb_to_hex(current_color))  # Actualizar el color del botón
 
@@ -58,28 +61,61 @@ steps = []
 def add_step():
     global steps
     global led_colors
+    
+    if is_playing:
+        return
+    
     # Crear un nuevo paso
     step = []
-    print("lista steps: ", steps)
     step.clear()
-    print("lista step: ", step)
+
     for i in range(MATRIX_SIZE):
         for j in range(MATRIX_SIZE):
             # Solo guardamos los LEDs que tienen un color distinto de negro
-            print(led_colors[i][j])
             if led_colors[i][j] != (0, 0, 0):
                 step.append({
                     "x": i, "y": j, "z": 0,  # Z por ahora siempre es 0
                     "color": led_colors[i][j]  # Color RGB
                 })
+                
     steps.append(step)
     print(f"Step añadido: {steps}")
+    
+# Función para obtener las coordenadas x e y del último step en el array steps
+def get_last_led_coordinates():
+    global steps
+    if steps:
+        last_step = steps[-1]
+        if last_step:
+            last_led = last_step[-1]
+            return (last_led["x"], last_led["y"])
+    print("No hay steps o LEDs en la lista.")
+    return None
 
+#Funcion para eliminar el ultimo step añadido
+def clear_last_step():
+    global steps
+    global led_colors
+    global led_matrix
+    stop_animation()  # Detener la animación si está en ejecución
+    if steps:
+        coordinates = get_last_led_coordinates()
+        print("Coordenadas del último step:", coordinates)
+        removed_step = steps.pop()
+        print(f"Último step eliminado: {removed_step}")
+        
+        led_colors[coordinates[0]][coordinates[1]] = (0, 0, 0)
+        led_matrix[coordinates[0]][coordinates[1]].config(bg=rgb_to_hex((0, 0, 0)))  # Actualizar el color del botón
+    else:
+        print("No hay steps para eliminar.")
+        
 # Función para vaciar la lista de steps
 def clear_steps():
     global steps
     global led_colors
     global is_playing
+    global led_matrix
+    
     steps.clear()  # Vaciar la lista de steps de manera segura
     print("Lista de steps vaciada:", steps)  # Confirmar que la lista está vacía
     stop_animation()  # Detener la animación si está en ejecución
@@ -93,6 +129,7 @@ def clear_steps():
 # Función para aplicar un step
 def apply_step(step):
     global steps
+    global led_matrix
     # Primero, reseteamos todos los LEDs a negro
     for i in range(MATRIX_SIZE):
         for j in range(MATRIX_SIZE):
@@ -121,7 +158,7 @@ def play_animation(step_index=0):
     try:
         speed = int(speed_entry.get())
     except ValueError:
-        speed = 500  # Valor predeterminado en caso de error
+        speed = 200  # Valor predeterminado en caso de error
 
     # Usar after para llamar de nuevo a la función después de la velocidad seleccionada
     root.after(speed, play_animation, next_step_index)
@@ -150,6 +187,12 @@ def show_steps_list():
 # Función para manejar el evento de la tecla espacio
 def handle_space(event):
     add_step()
+    
+def handle_backspace(event):
+    clear_last_step()
+
+def handle_esc(event):
+    clear_steps()
 
 # Función para iniciar o detener la animación al presionar Enter
 def toggle_animation(event):
@@ -162,6 +205,8 @@ def toggle_animation(event):
 # Asociar el evento de la tecla espacio y Enter con las funciones correspondientes
 root.bind("<space>", handle_space)
 root.bind("<Return>", toggle_animation)  # Enter key to start/stop animation
+root.bind("<BackSpace>", handle_backspace)  # Backspace key to clear last step
+root.bind("<Escape>", handle_esc)  # Escape key to clear all steps
 
 # Botón para añadir step (abajo de la matriz)
 add_step_btn = tk.Button(root, text="Añadir Step", command=add_step)
@@ -174,7 +219,7 @@ clear_steps_btn.grid(row=MATRIX_SIZE + 2, column=0, columnspan=MATRIX_SIZE, pady
 # Campo para ajustar la velocidad de la animación
 tk.Label(root, text="Velocidad (ms)").grid(row=MATRIX_SIZE + 3, column=0, columnspan=MATRIX_SIZE, pady=5)
 speed_entry = tk.Entry(root)
-speed_entry.insert(0, "500")  # Valor predeterminado de 500 ms
+speed_entry.insert(0, "200")  # Valor predeterminado de 200 ms
 speed_entry.grid(row=MATRIX_SIZE + 4, column=0, columnspan=MATRIX_SIZE, pady=5)
 
 # Botón para reproducir la animación
@@ -188,6 +233,10 @@ stop_button.grid(row=MATRIX_SIZE + 6, column=0, columnspan=MATRIX_SIZE, pady=5)
 # Botón para mostrar la lista de steps
 show_button = tk.Button(root, text="Mostrar Steps", command=show_steps_list)
 show_button.grid(row=MATRIX_SIZE + 7, column=0, columnspan=MATRIX_SIZE, pady=5)
+
+# Botón para mostrar la lista de steps
+show_button = tk.Button(root, text="Borrar ultimo step", command=clear_last_step)
+show_button.grid(row=MATRIX_SIZE + 8, column=0, columnspan=MATRIX_SIZE, pady=5)
 
 # Iniciar la interfaz
 root.mainloop()
