@@ -57,6 +57,7 @@ steps = []
 # Función para añadir el step actual a la lista de animaciones
 def add_step():
     global steps
+    global led_colors
     # Crear un nuevo paso
     step = []
     print("lista steps: ", steps)
@@ -65,6 +66,7 @@ def add_step():
     for i in range(MATRIX_SIZE):
         for j in range(MATRIX_SIZE):
             # Solo guardamos los LEDs que tienen un color distinto de negro
+            print(led_colors[i][j])
             if led_colors[i][j] != (0, 0, 0):
                 step.append({
                     "x": i, "y": j, "z": 0,  # Z por ahora siempre es 0
@@ -76,6 +78,7 @@ def add_step():
 # Función para vaciar la lista de steps
 def clear_steps():
     global steps
+    global led_colors
     global is_playing
     steps.clear()  # Vaciar la lista de steps de manera segura
     print("Lista de steps vaciada:", steps)  # Confirmar que la lista está vacía
@@ -84,6 +87,7 @@ def clear_steps():
     # Limpiar la matriz de LEDs
     for i in range(MATRIX_SIZE):
         for j in range(MATRIX_SIZE):
+            led_colors[i][j] = (0,0,0)
             led_matrix[i][j].config(bg="black")
 
 # Función para aplicar un step
